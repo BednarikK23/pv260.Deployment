@@ -37,13 +37,13 @@ jobs:
         run: dotnet publish Demo.BlazorWasmApp/Demo.BlazorWasmApp.csproj -c Release -o publish
 
       - name: Configure SPA fallback for Pages
-        run: cp publish/wwwroot/index.html
+        run: cp publish/wwwroot/index.html publish/404.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           name: github-pages
-          path: publish/wwwroot
+          path: publish/wwwroot/index.html
 
   deploy:
     environment:

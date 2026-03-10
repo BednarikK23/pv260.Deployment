@@ -1,3 +1,7 @@
+// <copyright file="Home.razor.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
+// </copyright>
+
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 
@@ -5,29 +9,28 @@ namespace Demo.BlazorWasmApp.Pages;
 
 public partial class Home : IDisposable
 {
-    private ElementReference gameDiv;
-
-    private bool gameStarted;
-    private bool gameOver;
-    private int score;
-    private int bestScore;
-
-    private double playerY;
-    private double velocityY;
-    private bool isJumping;
-
     private const int GroundHeight = 40;
     private const double Gravity = -0.95;
     private const double JumpForce = 16;
     private const int GameWidth = 800;
-
-    private readonly List<ObstacleData> obstacles = new();
-    private double obstacleSpeed = 5;
-    private double spawnTimer;
-    private double nextSpawnTime = 70;
-
     private const double BaseSpeed = 5.0;
     private const double MaxSpeed = 20.0;
+
+    private readonly List<ObstacleData> obstacles = new();
+    private readonly Random rng = new();
+
+    private ElementReference gameDiv;
+    private bool gameStarted;
+    private bool gameOver;
+    private int score;
+    private int bestScore;
+    private double playerY;
+    private double velocityY;
+    private bool isJumping;
+    private double obstacleSpeed = BaseSpeed;
+    private double spawnTimer;
+    private double nextSpawnTime = 70;
+    private CancellationTokenSource? cts;
 
     private string SpeedLabel => obstacleSpeed switch
     {
@@ -47,8 +50,11 @@ public partial class Home : IDisposable
         _ => "#212121"
     };
 
-    private CancellationTokenSource? cts;
-    private readonly Random rng = new();
+    public void Dispose()
+    {
+        cts?.Cancel();
+        cts?.Dispose();
+    }
 
     protected override void OnAfterRender(bool firstRender)
     {
@@ -116,11 +122,13 @@ public partial class Home : IDisposable
         if (spawnTimer >= nextSpawnTime)
         {
             spawnTimer = 0;
+
             // At score 0: [60,100]  →  at score 1000: [30,60]  →  at score 2000: [22,42]
             int minSpawn = Math.Max(22, 60 - score / 35);
             int maxSpawn = Math.Max(minSpawn + 8, 100 - score / 25);
             nextSpawnTime = rng.Next(minSpawn, maxSpawn);
             obstacles.Add(new ObstacleData { X = GameWidth, Height = rng.Next(32, 58) });
+
             // Double-obstacle groups from score 700 onward (25% chance, rises to 45%)
             double doubleChance = Math.Min(0.45, 0.25 + score * 0.00003);
             if (score > 700 && rng.NextDouble() < doubleChance)
@@ -137,56 +145,11 @@ public partial class Home : IDisposable
         }
 
         score++;
+
         // Reaches MaxSpeed at ~1500: comfortable for a new player up to ~1000
         obstacleSpeed = Math.Min(MaxSpeed, BaseSpeed + score * 0.01);
     }
 
     private void EndGame()
     {
-        if (score > bestScore)
-            bestScore = score;
-        gameOver = true;
-        cts?.Cancel();
-        _ = InvokeAsync(StateHasChanged);
-    }
-
-    private void Jump()
-    {
-        if (!isJumping && gameStarted && !gameOver)
-        {
-            isJumping = true;
-            velocityY = JumpForce;
-        }
-    }
-
-    private void OnKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Code == "Space")
-        {
-            if (!gameStarted || gameOver)
-                StartGame();
-            else
-                Jump();
-        }
-    }
-
-    private void OnClick()
-    {
-        if (!gameStarted || gameOver)
-            StartGame();
-        else
-            Jump();
-    }
-
-    public void Dispose()
-    {
-        cts?.Cancel();
-        cts?.Dispose();
-    }
-
-    private class ObstacleData
-    {
-        public double X { get; set; }
-        public int Height { get; set; }
-    }
-}
+        if
