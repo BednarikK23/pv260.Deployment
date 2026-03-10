@@ -2,10 +2,10 @@
 // Copyright (c) PlaceholderCompany. All rights reserved.
 // </copyright>
 
-namespace Demo.BlazorWasmApp.Pages;
-
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+
+namespace Demo.BlazorWasmApp.Pages;
 
 /// <summary>
 /// The home page of the application, featuring the Dino Jump game.
@@ -212,6 +212,10 @@ public partial class Home : IDisposable
     private class ObstacleData
     {
         public double X { get; set; }
+
         public int Height { get; set; }
     }
 }
+
+
+
