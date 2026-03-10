@@ -2,9 +2,6 @@
 // Copyright (c) PlaceholderCompany. All rights reserved.
 // </copyright>
 
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
-
 namespace Demo.BlazorWasmApp.Pages;
 
 public partial class Home : IDisposable
@@ -152,4 +149,46 @@ public partial class Home : IDisposable
 
     private void EndGame()
     {
-        if
+        if (score > bestScore)
+            bestScore = score;
+        gameOver = true;
+        cts?.Cancel();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void Jump()
+    {
+        if (!isJumping && gameStarted && !gameOver)
+        {
+            isJumping = true;
+            velocityY = JumpForce;
+        }
+    }
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Code == "Space")
+        {
+            if (!gameStarted || gameOver)
+                StartGame();
+            else
+                Jump();
+        }
+    }
+
+    private void OnClick()
+    {
+        if (!gameStarted || gameOver)
+            StartGame();
+        else
+            Jump();
+    }
+
+
+    private class ObstacleData
+    {
+        public double X { get; set; }
+        public int Height { get; set; }
+    }
+}
+
