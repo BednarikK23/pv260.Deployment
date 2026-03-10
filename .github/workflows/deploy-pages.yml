@@ -43,7 +43,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           name: github-pages
-          path: publish/wwwroot/index.html
+          path: publish/wwwroot/
 
   deploy:
     environment:
