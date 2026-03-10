@@ -4,6 +4,12 @@
 
 namespace Demo.BlazorWasmApp.Pages;
 
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+
+/// <summary>
+/// The home page of the application, featuring the Dino Jump game.
+/// </summary>
 public partial class Home : IDisposable
 {
     private const int GroundHeight = 40;
@@ -29,55 +35,57 @@ public partial class Home : IDisposable
     private double nextSpawnTime = 70;
     private CancellationTokenSource? cts;
 
-    private string SpeedLabel => obstacleSpeed switch
+    private string SpeedLabel => this.obstacleSpeed switch
     {
         < 8.0 => "Easy",
         < 12.0 => "Medium",
         < 16.0 => "Hard",
         < 20.0 => "Extreme",
-        _ => "INSANE"
+        _ => "INSANE",
     };
 
-    private string SpeedColor => obstacleSpeed switch
+    private string SpeedColor => this.obstacleSpeed switch
     {
         < 8.0 => "#4caf50",
         < 12.0 => "#ff9800",
         < 16.0 => "#f44336",
         < 20.0 => "#9c27b0",
-        _ => "#212121"
+        _ => "#212121",
     };
 
+    /// <inheritdoc/>
     public void Dispose()
     {
-        cts?.Cancel();
-        cts?.Dispose();
+        this.cts?.Cancel();
+        this.cts?.Dispose();
     }
 
+    /// <inheritdoc/>
     protected override void OnAfterRender(bool firstRender)
     {
         if (firstRender)
         {
-            _ = gameDiv.FocusAsync();
+            _ = this.gameDiv.FocusAsync();
         }
     }
 
     private void StartGame()
     {
-        gameStarted = true;
-        gameOver = false;
-        score = 0;
-        playerY = 0;
-        velocityY = 0;
-        isJumping = false;
-        obstacles.Clear();
-        obstacleSpeed = BaseSpeed;
-        spawnTimer = 0;
-        nextSpawnTime = 70;
+        this.gameStarted = true;
+        this.gameOver = false;
+        this.score = 0;
+        this.playerY = 0;
+        this.velocityY = 0;
+        this.isJumping = false;
+        this.obstacles.Clear();
+        this.obstacleSpeed = BaseSpeed;
+        this.spawnTimer = 0;
+        this.nextSpawnTime = 70;
 
-        cts?.Cancel();
-        cts?.Dispose();
-        cts = new CancellationTokenSource();
-        _ = GameLoopAsync(cts.Token);
+        this.cts?.Cancel();
+        this.cts?.Dispose();
+        this.cts = new CancellationTokenSource();
+        _ = this.GameLoopAsync(this.cts.Token);
     }
 
     private async Task GameLoopAsync(CancellationToken token)
@@ -87,81 +95,90 @@ public partial class Home : IDisposable
         {
             while (await timer.WaitForNextTickAsync(token))
             {
-                Tick();
-                await InvokeAsync(StateHasChanged);
+                this.Tick();
+                await this.InvokeAsync(this.StateHasChanged);
             }
         }
-        catch (OperationCanceledException) { }
+        catch (OperationCanceledException)
+        {
+        }
     }
 
     private void Tick()
     {
-        if (isJumping)
+        if (this.isJumping)
         {
-            velocityY += Gravity;
-            playerY += velocityY;
-            if (playerY <= 0)
+            this.velocityY += Gravity;
+            this.playerY += this.velocityY;
+            if (this.playerY <= 0)
             {
-                playerY = 0;
-                velocityY = 0;
-                isJumping = false;
+                this.playerY = 0;
+                this.velocityY = 0;
+                this.isJumping = false;
             }
         }
 
-        for (int i = obstacles.Count - 1; i >= 0; i--)
+        for (int i = this.obstacles.Count - 1; i >= 0; i--)
         {
-            obstacles[i].X -= obstacleSpeed;
-            if (obstacles[i].X < -50)
-                obstacles.RemoveAt(i);
+            this.obstacles[i].X -= this.obstacleSpeed;
+            if (this.obstacles[i].X < -50)
+            {
+                this.obstacles.RemoveAt(i);
+            }
         }
 
-        spawnTimer++;
-        if (spawnTimer >= nextSpawnTime)
+        this.spawnTimer++;
+        if (this.spawnTimer >= this.nextSpawnTime)
         {
-            spawnTimer = 0;
+            this.spawnTimer = 0;
 
             // At score 0: [60,100]  →  at score 1000: [30,60]  →  at score 2000: [22,42]
-            int minSpawn = Math.Max(22, 60 - score / 35);
-            int maxSpawn = Math.Max(minSpawn + 8, 100 - score / 25);
-            nextSpawnTime = rng.Next(minSpawn, maxSpawn);
-            obstacles.Add(new ObstacleData { X = GameWidth, Height = rng.Next(32, 58) });
+            int minSpawn = Math.Max(22, 60 - (this.score / 35));
+            int maxSpawn = Math.Max(minSpawn + 8, 100 - (this.score / 25));
+            this.nextSpawnTime = this.rng.Next(minSpawn, maxSpawn);
+            this.obstacles.Add(new ObstacleData { X = GameWidth, Height = this.rng.Next(32, 58) });
 
             // Double-obstacle groups from score 700 onward (25% chance, rises to 45%)
-            double doubleChance = Math.Min(0.45, 0.25 + score * 0.00003);
-            if (score > 700 && rng.NextDouble() < doubleChance)
-                obstacles.Add(new ObstacleData { X = GameWidth + 75, Height = rng.Next(30, 55) });
+            double doubleChance = Math.Min(0.45, 0.25 + (this.score * 0.00003));
+            if (this.score > 700 && this.rng.NextDouble() < doubleChance)
+            {
+                this.obstacles.Add(new ObstacleData { X = GameWidth + 75, Height = this.rng.Next(30, 55) });
+            }
         }
 
-        foreach (var obs in obstacles)
+        foreach (var obs in this.obstacles)
         {
-            if (obs.X > 58 && obs.X < 122 && playerY < obs.Height - 12)
+            if (obs.X > 58 && obs.X < 122 && this.playerY < obs.Height - 12)
             {
-                EndGame();
+                this.EndGame();
                 return;
             }
         }
 
-        score++;
+        this.score++;
 
         // Reaches MaxSpeed at ~1500: comfortable for a new player up to ~1000
-        obstacleSpeed = Math.Min(MaxSpeed, BaseSpeed + score * 0.01);
+        this.obstacleSpeed = Math.Min(MaxSpeed, BaseSpeed + (this.score * 0.01));
     }
 
     private void EndGame()
     {
-        if (score > bestScore)
-            bestScore = score;
-        gameOver = true;
-        cts?.Cancel();
-        _ = InvokeAsync(StateHasChanged);
+        if (this.score > this.bestScore)
+        {
+            this.bestScore = this.score;
+        }
+
+        this.gameOver = true;
+        this.cts?.Cancel();
+        _ = this.InvokeAsync(this.StateHasChanged);
     }
 
     private void Jump()
     {
-        if (!isJumping && gameStarted && !gameOver)
+        if (!this.isJumping && this.gameStarted && !this.gameOver)
         {
-            isJumping = true;
-            velocityY = JumpForce;
+            this.isJumping = true;
+            this.velocityY = JumpForce;
         }
     }
 
@@ -169,21 +186,28 @@ public partial class Home : IDisposable
     {
         if (e.Code == "Space")
         {
-            if (!gameStarted || gameOver)
-                StartGame();
+            if (!this.gameStarted || this.gameOver)
+            {
+                this.StartGame();
+            }
             else
-                Jump();
+            {
+                this.Jump();
+            }
         }
     }
 
     private void OnClick()
     {
-        if (!gameStarted || gameOver)
-            StartGame();
+        if (!this.gameStarted || this.gameOver)
+        {
+            this.StartGame();
+        }
         else
-            Jump();
+        {
+            this.Jump();
+        }
     }
-
 
     private class ObstacleData
     {
@@ -191,4 +215,3 @@ public partial class Home : IDisposable
         public int Height { get; set; }
     }
 }
-
